@@ -50,20 +50,30 @@
 
 ## Решение проблем
 
-### Ошибка при сборке (Build failed)
-Если вы видите ошибку типа "Failed to build an image" или проблемы с установкой `libpq5`:
+### Ошибка при сборке (Build failed) - установка libpq5
+Если вы видите ошибку "Failed to build an image" или "process apt-get install -y libpq5 did not complete":
 
-1. **Вариант 1 (рекомендуется)**: Railway должен автоматически использовать `nixpacks.toml` из проекта
-   - Убедитесь, что файл `nixpacks.toml` присутствует в корне проекта
-   - Перезапустите деплой
+**РЕШЕНИЕ (используйте Dockerfile):**
 
-2. **Вариант 2**: Используйте Dockerfile
-   - В настройках проекта Railway выберите "Use Dockerfile"
-   - Railway автоматически обнаружит `Dockerfile` в корне проекта
+1. В Railway перейдите в Settings вашего сервиса
+2. Найдите раздел "Build"
+3. В поле "Build Command" выберите или введите: `Use Dockerfile`
+4. Или вручную установите:
+   - Settings → Build → Buildpack: выберите "Dockerfile"
+   - Или в "Build Command" оставьте пустым (Railway автоматически найдет Dockerfile)
+5. Сохраните настройки
+6. Запустите новый деплой (Redeploy)
 
-3. **Вариант 3**: В настройках проекта Railway
-   - Settings → Build → Build Command: оставьте пустым или `pip install -r requirements.txt`
-   - Settings → Build → Start Command: `python bot.py`
+**Альтернативное решение:**
+
+Если Dockerfile не работает, попробуйте:
+1. Settings → Build → Build Command: `pip install --no-cache-dir -r requirements.txt`
+2. Settings → Build → Start Command: `python bot.py`
+3. Убедитесь, что в Buildpack выбран "Nixpacks" (не "Docker")
+4. Перезапустите деплой
+
+**Почему это происходит:**
+Railway автоматически пытается определить зависимости и устанавливает системные пакеты PostgreSQL, но `psycopg2-binary` уже содержит все необходимые библиотеки и не требует системных пакетов. Dockerfile обходит эту автоматическую установку.
 
 ### Бот не запускается
 - Проверьте логи в Railway
