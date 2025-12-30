@@ -56,6 +56,8 @@ python bot.py
 - `reminders.py` - система напоминаний
 - `requirements.txt` - зависимости Python
 - `Procfile` - конфигурация для Railway
+- `nixpacks.toml` - конфигурация сборки для Railway (Nixpacks)
+- `Dockerfile` - альтернативная конфигурация сборки (Docker)
 
 ## Команды бота
 

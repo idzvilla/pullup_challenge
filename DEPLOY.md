@@ -50,6 +50,21 @@
 
 ## Решение проблем
 
+### Ошибка при сборке (Build failed)
+Если вы видите ошибку типа "Failed to build an image" или проблемы с установкой `libpq5`:
+
+1. **Вариант 1 (рекомендуется)**: Railway должен автоматически использовать `nixpacks.toml` из проекта
+   - Убедитесь, что файл `nixpacks.toml` присутствует в корне проекта
+   - Перезапустите деплой
+
+2. **Вариант 2**: Используйте Dockerfile
+   - В настройках проекта Railway выберите "Use Dockerfile"
+   - Railway автоматически обнаружит `Dockerfile` в корне проекта
+
+3. **Вариант 3**: В настройках проекта Railway
+   - Settings → Build → Build Command: оставьте пустым или `pip install -r requirements.txt`
+   - Settings → Build → Start Command: `python bot.py`
+
 ### Бот не запускается
 - Проверьте логи в Railway
 - Убедитесь, что `TELEGRAM_BOT_TOKEN` установлен правильно
