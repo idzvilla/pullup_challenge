@@ -8,6 +8,7 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
+from telegram.error import TimedOut, NetworkError
 import database as db
 import config
 import reminders
@@ -63,9 +64,14 @@ def get_main_keyboard():
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик нажатий на кнопки"""
     query = update.callback_query
-    await query.answer()
-    
     user_id = query.from_user.id
+    
+    # Пытаемся ответить на callback, но не блокируем выполнение при ошибке
+    try:
+        await query.answer()
+    except Exception as e:
+        logger.warning(f"Ошибка при ответе на callback query: {e}")
+        # Продолжаем выполнение даже если ответ не удался
     
     if query.data == "add_pullups":
         await query.edit_message_text(
@@ -287,6 +293,17 @@ def main():
     application.add_handler(CommandHandler("leaderboard", leaderboard_command))
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    
+    # Обработчик ошибок
+    async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Обработчик ошибок"""
+        error = context.error
+        if isinstance(error, (TimedOut, NetworkError)):
+            logger.warning(f"Таймаут или сетевая ошибка: {error}")
+        else:
+            logger.error(f"Необработанная ошибка: {error}", exc_info=error)
+    
+    application.add_error_handler(error_handler)
     
     # Настройка напоминаний
     reminders.setup_reminders(application)
