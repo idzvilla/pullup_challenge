@@ -262,6 +262,67 @@ def get_user_rank(user_id):
         conn.close()
 
 
+def get_today_pullups(user_id):
+    """Возвращает количество подтягиваний пользователя за сегодня"""
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("""
+            SELECT COALESCE(SUM(count), 0) as total
+            FROM pullups
+            WHERE user_id = %s AND date = CURRENT_DATE
+        """, (user_id,))
+        result = cur.fetchone()
+        return result[0] if result else 0
+    except Exception as e:
+        logger.error(f"Ошибка при получении подтягиваний за сегодня: {e}")
+        return 0
+    finally:
+        cur.close()
+        conn.close()
+
+
+def get_last_pullup(user_id):
+    """Возвращает последнюю запись подтягиваний пользователя"""
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    try:
+        cur.execute("""
+            SELECT id, count, date, created_at
+            FROM pullups
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, (user_id,))
+        return cur.fetchone()
+    except Exception as e:
+        logger.error(f"Ошибка при получении последней записи: {e}")
+        return None
+    finally:
+        cur.close()
+        conn.close()
+
+
+def delete_pullup(pullup_id):
+    """Удаляет запись подтягиваний по ID"""
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("DELETE FROM pullups WHERE id = %s", (pullup_id,))
+        conn.commit()
+        return cur.rowcount > 0
+    except Exception as e:
+        logger.error(f"Ошибка при удалении записи: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cur.close()
+        conn.close()
+
+
 def get_all_users():
     """Возвращает список всех пользователей для напоминаний"""
     conn = get_connection()
