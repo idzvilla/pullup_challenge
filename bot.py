@@ -12,6 +12,7 @@ from datetime import date, datetime
 import database as db
 import config
 import reminders
+import ranks
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -81,6 +82,10 @@ async def handle_add_pullups(update: Update, context: ContextTypes.DEFAULT_TYPE)
             )
             return
         
+        # Получаем ранг ДО добавления подтягиваний
+        total_before = db.get_user_total(user_id)
+        rank_before = ranks.get_rank(total_before)
+        
         # Добавляем подтягивания
         success = db.add_pullups(user_id, count)
         
@@ -88,16 +93,45 @@ async def handle_add_pullups(update: Update, context: ContextTypes.DEFAULT_TYPE)
             total = db.get_user_total(user_id)
             today = db.get_today_pullups(user_id)
             
+            # Получаем информацию о ранге ПОСЛЕ добавления
+            rank_info = ranks.get_rank_info(total)
+            current_rank = rank_info['current_rank']
+            pullups_to_next = rank_info['pullups_to_next']
+            
+            # Проверяем, произошло ли повышение ранга
+            rank_changed = rank_before != current_rank
+            
             response = (
                 f"✅ Добавлено {count} подтягиваний.\n\n"
                 f"📅 Сегодня: {today}\n"
-                f"📊 Всего: {total:,}"
+                f"📊 Всего: {total:,}\n\n"
             )
+            
+            # Добавляем информацию о ранге
+            if pullups_to_next > 0:
+                response += f"🎖️ Твой текущий ранг: <b>{current_rank}</b>\n"
+                response += f"📈 До повышения ранга осталось: {pullups_to_next} подтягиваний"
+            else:
+                response += f"🎖️ Твой ранг: <b>{current_rank}</b> (максимальный!)"
             
             await update.message.reply_text(
                 response,
-                reply_markup=get_main_keyboard()
+                reply_markup=get_main_keyboard(),
+                parse_mode='HTML'
             )
+            
+            # Если ранг повысился, отправляем поздравительное сообщение
+            if rank_changed:
+                congrats_message = (
+                    f"🎉 <b>ПОЗДРАВЛЯЕМ С ПОВЫШЕНИЕМ РАНГА!</b> 🎉\n\n"
+                    f"Твой новый ранг: <b>{current_rank}</b>\n\n"
+                    f"Продолжай в том же духе! 💪"
+                )
+                await update.message.reply_text(
+                    congrats_message,
+                    reply_markup=get_main_keyboard(),
+                    parse_mode='HTML'
+                )
         else:
             await update.message.reply_text(
                 "❌ Ошибка при добавлении подтягиваний. Попробуй еще раз.",
@@ -160,6 +194,11 @@ async def show_progress(update: Update, user_id: int):
     expected_total = target_per_day * days_passed
     is_behind = total < expected_total
     
+    # Получаем информацию о ранге
+    rank_info = ranks.get_rank_info(total)
+    current_rank = rank_info['current_rank']
+    pullups_to_next = rank_info['pullups_to_next']
+    
     progress_text = (
         f"👤 Ваш прогресс:\n\n"
         f"📊 Всего: {total:,} подтягиваний\n"
@@ -173,12 +212,20 @@ async def show_progress(update: Update, user_id: int):
     
     progress_text += f"🏠 Нужно в день до конца года: {needed_per_day:.0f}"
     
+    # Добавляем информацию о ранге (только для самого пользователя)
+    progress_text += f"\n\n🎖️ Твой ранг: <b>{current_rank}</b>"
+    if pullups_to_next > 0:
+        progress_text += f"\n📈 До повышения ранга осталось: {pullups_to_next} подтягиваний"
+    else:
+        progress_text += f"\n🏆 Ты достиг максимального ранга!"
+    
     if rank:
         progress_text += f"\n\n🏆 Ваша позиция в рейтинге: #{rank}"
     
     await update.message.reply_text(
         progress_text,
-        reply_markup=get_main_keyboard()
+        reply_markup=get_main_keyboard(),
+        parse_mode='HTML'
     )
 
 
