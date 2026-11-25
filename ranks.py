@@ -24,7 +24,7 @@ RANKS = {
     (16000, 16999): "Выдра",
     (17000, 17999): "Папуас",
     (18000, 18999): "Выживший",
-    (19000, float('inf')): "Легенда"
+    (19000, float('inf')): "Сын маминой подруги"
 }
 
 
@@ -46,7 +46,7 @@ def get_rank(total_pullups: int) -> str:
             if min_val <= total_pullups <= max_val:
                 return rank_name
     # Если не найден (не должно произойти), возвращаем последний ранг
-    return "Легенда"
+    return "Сын маминой подруги"
 
 
 def get_rank_info(total_pullups: int) -> dict:
